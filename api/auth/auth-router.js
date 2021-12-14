@@ -20,23 +20,29 @@ router.post('/register', checkPasswordLength, checkUsernameFree,  (req, res, nex
       .catch (next)
 })
 
-router.post('/login', async (req, res, next) => {
-  try {
-    res.json('login wired')
-  } catch (err) {
-    next(err)
+router.post('/login', checkUsernameExists,  (req, res, next) => {
+  const { password } = req.body
+  if (bcrypt.compareSync(password, req.user.password)) {
+    req.session.user = req.user 
+    res.json({ message: `welcome ${req.user.username}` })
+  } else {
+    next({ status: 401, message: 'Invalid credentials' })
   }
-  
 })
 
 router.get('/logout', async (req, res, next) => {
-  try {
-    res.json('logout wired')
-  } catch (err) {
-    next(err)
+  if (!req.session.user) {
+    return res.json({ message: 'no session' })
   }
-  
+  req.session.destroy((err) => { 
+    if (err) {
+      return res.json({ message: 'something went wrong logging you out' })
+    }
+    res.json({ message: 'logged out' })
+  }) 
 })
+
+
 module.exports = router;
 
 // Require `checkUsernameFree`, `checkUsernameExists` and `checkPasswordLength`
